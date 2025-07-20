@@ -49,7 +49,19 @@ async function handleGenerateQuiz(req: VercelRequest, res: VercelResponse) {
     };
 
     const prompt = `
-      You are an expert quiz generator...
+      You are an expert quiz generator. Your task is to analyze the provided PDF document and extract multiple-choice questions (MCQs) to create a quiz.
+
+      Follow these rules strictly:
+      1.  **Identify MCQs:** Find all questions that have a list of options.
+      2.  **Extract All Options:** You MUST extract all provided options for each question. For example, if a question has two options (like True/False), you must include both "True" and "False" in the options array. Do not omit any options.
+      3.  **Determine Correct Answers with High Accuracy:** Your primary goal is to be correct.
+          *   A question may have one or more correct answers.
+          *   **Step 1: Look for Explicit Markers.** First, try to identify the correct answer(s) based on explicit markings in the text. Common markers are **bold text**, an underline, or an asterisk (*). If you find marked answers, use them as the source of truth.
+          *   **Step 2: Fallback to General Knowledge.** If, and only if, a question has **NO explicit markers** for any of its options, you should use your own knowledge to determine the correct answer(s).
+          *   **Step 3: Handle Ambiguity.** If a question is ambiguous or you cannot confidently determine an answer (either from markers or knowledge), return an empty array \`[]\` for the 'answer' field. This should be a last resort. Do not guess randomly.
+          *   Ensure you extract ALL correct answers for a question.
+      4.  **Format Output:** Return the data ONLY in the requested JSON format. Your entire response must be the JSON array object and nothing else.
+      5.  **Page and Image References:** For each question, you MUST identify its 0-based page index within the provided PDF chunk. Also, determine if the question explicitly refers to an image or exhibit and set the 'hasImage' flag accordingly.
     `;
     
     while(retries < maxRetries) {
@@ -112,7 +124,14 @@ async function handleGetExplanation(req: VercelRequest, res: VercelResponse) {
     while(retries < maxRetries) {
       try {
         const prompt = `
-          You are a helpful teaching assistant...
+          You are a helpful teaching assistant. For the following multiple-choice question, please explain *why* the correct answer is correct. 
+          Keep the explanation clear, concise, and easy to understand.
+
+          Question: "${question.question}"
+          Options: ${question.options.join(', ')}
+          Correct Answer(s): ${question.answer.join(', ')}
+
+          Provide only the explanation text, without any introductory phrases like "The explanation is..." or "Sure, here's...".
         `;
 
         const response = await ai.models.generateContent({
