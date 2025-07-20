@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF Quiz Generator | Powered by Gemini</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.0",
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.10.0",
+    "canvas-confetti": "https://esm.sh/canvas-confetti@^1.9.3",
+    "pdf-lib": "https://esm.sh/pdf-lib@^1.17.1"
+  }
+}
+</script>
+<style>
+  body {
+    background-color: #e0f2fe; /* Light Sky Blue */
+  }
+  
+  /* Floating Shapes Background */
+  .background-shapes {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .background-shapes li {
+    position: absolute;
+    display: block;
+    list-style: none;
+    width: 20px;
+    height: 20px;
+    animation: float-up 25s linear infinite;
+    bottom: -150px;
+    opacity: 0.8;
+  }
+
+  .background-shapes li:nth-child(1) { left: 25%; width: 80px; height: 80px; animation-delay: 0s; background-color: #38bdf8; } /* Sky Blue */
+  .background-shapes li:nth-child(2) { left: 10%; width: 20px; height: 20px; animation-delay: 2s; animation-duration: 12s; background-color: #34d399; } /* Emerald Green */
+  .background-shapes li:nth-child(3) { left: 70%; width: 20px; height: 20px; animation-delay: 4s; background-color: #facc15; } /* Yellow */
+  .background-shapes li:nth-child(4) { left: 40%; width: 60px; height: 60px; animation-delay: 0s; animation-duration: 18s; background-color: #60a5fa; } /* Blue */
+  .background-shapes li:nth-child(5) { left: 65%; width: 20px; height: 20px; animation-delay: 0s; background-color: #a7f3d0; } /* Light Green */
+  .background-shapes li:nth-child(6) { left: 75%; width: 110px; height: 110px; animation-delay: 3s; background-color: #fde047; } /* Saturated Yellow */
+  .background-shapes li:nth-child(7) { left: 35%; width: 150px; height: 150px; animation-delay: 7s; background-color: #22d3ee; } /* Cyan */
+  .background-shapes li:nth-child(8) { left: 50%; width: 25px; height: 25px; animation-delay: 15s; animation-duration: 45s; background-color: #4ade80; } /* Green */
+  .background-shapes li:nth-child(9) { left: 20%; width: 15px; height: 15px; animation-delay: 2s; animation-duration: 35s; background-color: #fef08a; } /* Light Yellow */
+  .background-shapes li:nth-child(10) { left: 85%; width: 150px; height: 150px; animation-delay: 0s; animation-duration: 11s; background-color: #0ea5e9; } /* Bright Blue */
+
+  @keyframes float-up {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; border-radius: 0; }
+    100% { transform: translateY(-1000px) rotate(720deg); opacity: 0; border-radius: 50%; }
+  }
+
+
+  /* General Animations */
+  @keyframes shake {
+    10%, 90% { transform: translateX(-1px); }
+    20%, 80% { transform: translateX(2px); }
+    30%, 50%, 70% { transform: translateX(-4px); }
+    40%, 60% { transform: translateX(4px); }
+  }
+  .animate-shake { animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both; }
+
+  @keyframes dog-shake {
+    0%, 100% { transform: rotate(0); }
+    10%, 30%, 50% { transform: rotate(-8deg); }
+    20%, 40%, 60% { transform: rotate(8deg); }
+    70% { transform: rotate(0); }
+  }
+  .animate-dog-shake { animation: dog-shake 1.5s ease-in-out; transform-origin: bottom center; }
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+  
+  @keyframes pop-in {
+    0% { transform: scale(0.5); opacity: 0; }
+    80% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .animate-pop-in { animation: pop-in 0.4s ease-out forwards; }
+
+  @keyframes fade-in-down {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in-down { animation: fade-in-down 0.5s ease-out forwards; }
+
+  /* Pencil Loader Animation */
+  @keyframes draw {
+    to { stroke-dashoffset: 0; }
+  }
+  #pencil-path {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: draw 3s linear forwards;
+  }
+
+  /* Score Circle Animation */
+  @keyframes score-progress {
+    from { stroke-dasharray: 0, 100; }
+  }
+  .animate-score { animation: score-progress 1s ease-out forwards; }
+
+  /* Progress Bar */
+  .progress-bar {
+    height: 8px;
+    background-color: #e5e7eb;
+  }
+  .progress-bar-inner {
+    height: 100%;
+    background-color: #3b82f6; /* Blue-500 */
+    transition: width 0.5s ease-out;
+  }
+  
+  /* Transformation UI styles */
+  .text-line {
+      height: 0.75rem;
+      border-radius: 0.25rem;
+      background-color: #cbd5e1;
+  }
+</style>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <ul class="background-shapes">
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+    </ul>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

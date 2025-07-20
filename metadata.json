@@ -1,0 +1,6 @@
+{
+  "name": "PDF Quiz Generator",
+  "description": "An intelligent web application that parses a PDF of multiple-choice questions and generates an interactive online quiz for users to practice.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
